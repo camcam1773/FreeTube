@@ -15,34 +15,12 @@ jobs:
         node-version: [20.x]
         runtime:
           - linux-x64
-          - linux-armv7l
-          - linux-arm64
           - win-x64
-          - win-arm64
-          - osx-x64
-          # `osx-arm64` disabled due to "macOS gatekeeper"
-          # See details in https://github.com/FreeTubeApp/FreeTube/pull/2113
-          # - osx-arm64
         include:
         - runtime: linux-x64
           os: ubuntu-latest
 
-        - runtime: linux-armv7l
-          os: ubuntu-latest
-
-        - runtime: linux-arm64
-          os: ubuntu-latest
-
-        - runtime: osx-x64
-          os: macOS-latest
-
-#        - runtime: osx-arm64
-#          os: macOS-latest
-
         - runtime: win-x64
-          os: windows-latest
-
-        - runtime: win-arm64
           os: windows-latest
 
     runs-on: ${{ matrix.os }}
