@@ -340,7 +340,7 @@ export default {
   },
 
   /**
-   * @param {{ videoUrl: string, quality: string, audioOnly: boolean, downloadDir: string, ytdlpPath: string }} payload
+   * @param {{ videoUrl: string, quality: string, audioOnly: boolean, downloadDir: string, ytdlpPath: string, sponsorBlockRemove?: string, sponsorBlockApi?: string }} payload
    */
   startDownload: (payload) => {
     ipcRenderer.send(IpcChannels.START_DOWNLOAD, payload)

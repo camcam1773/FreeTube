@@ -174,7 +174,34 @@ async function changeFolder() {
   }
 }
 
+function getActiveSponsorBlockCategories() {
+  const categories = []
+  if (store.getters.getSponsorBlockSponsor?.skip !== 'doNothing') categories.push('sponsor')
+  if (store.getters.getSponsorBlockSelfPromo?.skip !== 'doNothing') categories.push('selfpromo')
+  if (store.getters.getSponsorBlockInteraction?.skip !== 'doNothing') categories.push('interaction')
+  if (store.getters.getSponsorBlockIntro?.skip !== 'doNothing') categories.push('intro')
+  if (store.getters.getSponsorBlockOutro?.skip !== 'doNothing') categories.push('outro')
+  if (store.getters.getSponsorBlockRecap?.skip !== 'doNothing') categories.push('preview')
+  if (store.getters.getSponsorBlockMusicOffTopic?.skip !== 'doNothing') categories.push('music_offtopic')
+  if (store.getters.getSponsorBlockFiller?.skip !== 'doNothing') categories.push('filler')
+  return categories.join(',')
+}
+
 function startDownload() {
+  let sponsorBlockRemove = undefined
+  let sponsorBlockApi = undefined
+
+  // Check if SponsorBlock is enabled in FreeTube settings
+  if (store.getters.getUseSponsorBlock) {
+    sponsorBlockRemove = getActiveSponsorBlockCategories()
+
+    // Only pass custom SponsorBlock API URL if configured
+    const configuredApi = store.getters.getSponsorBlockUrl
+    if (configuredApi && configuredApi !== 'https://sponsor.ajay.app') {
+      sponsorBlockApi = configuredApi
+    }
+  }
+
   const downloadObj = {
     videoId: videoId.value,
     title: title.value,
@@ -183,6 +210,8 @@ function startDownload() {
     audioOnly: audioOnly.value,
     downloadDir: downloadFolderPath.value,
     ytdlpPath: ytdlpPath.value,
+    sponsorBlockRemove,
+    sponsorBlockApi,
     status: 'pending',
     percent: '0',
     speed: '',

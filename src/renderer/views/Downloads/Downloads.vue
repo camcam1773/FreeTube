@@ -122,6 +122,20 @@
             <div class="destination-path">
               {{ t('Settings.Download Settings.Saved To') }}: {{ item.downloadDir || t('Settings.Download Settings.Default System Downloads') }}
             </div>
+
+            <div class="command-section">
+              <button class="toggle-command-btn" @click="toggleCommand(item.videoUrl)">
+                <FontAwesomeIcon :icon="['fas', isCommandVisible(item.videoUrl) ? 'angle-up' : 'angle-down']" class="btn-icon" />
+                {{ isCommandVisible(item.videoUrl) ? t('Settings.Download Settings.Hide Command') : t('Settings.Download Settings.Show Command') }}
+              </button>
+              <div v-if="isCommandVisible(item.videoUrl)" class="command-box-wrapper">
+                <code class="command-box">{{ getCommandLine(item) }}</code>
+                <button class="copy-command-btn" @click="copyCommandText(item)" :title="t('Settings.Download Settings.Copy Command')">
+                  <FontAwesomeIcon :icon="['fas', 'copy']" />
+                  {{ t('Settings.Download Settings.Copy Command') }}
+                </button>
+              </div>
+            </div>
           </div>
 
           <div class="card-right">
@@ -152,7 +166,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { copyToClipboard } from '../../helpers/utils'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import { useI18n } from '../../composables/use-i18n-polyfill'
 import store from '../../store'
@@ -191,6 +206,73 @@ function clearCompleted() {
 
 function clearAll() {
   store.dispatch('clearAll')
+}
+
+const visibleCommands = ref(new Set())
+
+function toggleCommand(videoUrl) {
+  if (visibleCommands.value.has(videoUrl)) {
+    visibleCommands.value.delete(videoUrl)
+  } else {
+    visibleCommands.value.add(videoUrl)
+  }
+}
+
+function isCommandVisible(videoUrl) {
+  return visibleCommands.value.has(videoUrl)
+}
+
+function getCommandLine(item) {
+  const exePath = item.ytdlpPath && item.ytdlpPath.trim() !== '' ? item.ytdlpPath.trim() : 'yt-dlp'
+  const quote = (str) => {
+    if (str.includes(' ') || str.includes('&') || str.includes(';')) {
+      return `"${str}"`
+    }
+    return str
+  }
+
+  const parts = [quote(exePath), '--ignore-config', '--newline', '--progress', quote(item.videoUrl)]
+  if (item.audioOnly) {
+    parts.push('-f', 'bestaudio/best')
+    if (item.quality === 'mp3') {
+      parts.push('-x', '--audio-format', 'mp3')
+    }
+  } else {
+    let formatStr = 'bestvideo+bestaudio/best'
+    if (item.quality === '2160p') {
+      formatStr = 'bestvideo[height<=2160]+bestaudio/best'
+    } else if (item.quality === '1440p') {
+      formatStr = 'bestvideo[height<=1440]+bestaudio/best'
+    } else if (item.quality === '1080p') {
+      formatStr = 'bestvideo[height<=1080]+bestaudio/best'
+    } else if (item.quality === '720p') {
+      formatStr = 'bestvideo[height<=720]+bestaudio/best'
+    } else if (item.quality === '480p') {
+      formatStr = 'bestvideo[height<=480]+bestaudio/best'
+    } else if (item.quality === '360p') {
+      formatStr = 'bestvideo[height<=360]+bestaudio/best'
+    }
+    parts.push('-f', quote(formatStr), '--merge-output-format', 'mp4')
+  }
+
+  const targetDir = item.downloadDir && item.downloadDir.trim() !== '' ? item.downloadDir.trim() : '<Downloads>'
+  parts.push('-o', quote(`${targetDir}/%(title)s.%(ext)s`))
+
+  if (item.sponsorBlockRemove) {
+    parts.push('--sponsorblock-remove', quote(item.sponsorBlockRemove))
+  }
+  if (item.sponsorBlockApi) {
+    parts.push('--sponsorblock-api', quote(item.sponsorBlockApi))
+  }
+
+  return parts.join(' ')
+}
+
+function copyCommandText(item) {
+  const cmd = getCommandLine(item)
+  copyToClipboard(cmd, {
+    messageOnSuccess: t('Settings.Download Settings.Command Copied')
+  })
 }
 </script>
 
@@ -346,6 +428,7 @@ function clearAll() {
 .card-center {
   flex-grow: 1;
   min-width: 0; /* allows text truncation */
+  overflow: hidden;
   margin-right: 1.2rem;
 }
 
@@ -496,5 +579,77 @@ function clearAll() {
     align-items: flex-start;
     gap: 0.2rem;
   }
+}
+
+.command-section {
+  margin-top: 0.5rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.toggle-command-btn {
+  background: none;
+  border: none;
+  color: var(--secondary-text-color);
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0;
+  transition: color 0.2s ease;
+}
+
+.toggle-command-btn:hover {
+  color: var(--accent-color);
+}
+
+.btn-icon {
+  font-size: 0.7rem;
+}
+
+.command-box-wrapper {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 0.4rem;
+  background-color: var(--bg-color-3);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+  align-items: stretch;
+  max-width: 100%;
+}
+
+.command-box {
+  display: block;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--main-text-color);
+  padding: 0.5rem 0.8rem;
+  overflow-x: auto;
+  white-space: nowrap;
+  background-color: transparent;
+  user-select: all;
+  align-self: center;
+}
+
+.copy-command-btn {
+  background-color: var(--bg-color-4);
+  border: none;
+  border-left: 1px solid var(--border-color);
+  color: var(--main-text-color);
+  padding: 0 0.8rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
+}
+
+.copy-command-btn:hover {
+  background-color: var(--primary-color);
+  color: var(--main-color-text);
 }
 </style>

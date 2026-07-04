@@ -101,7 +101,9 @@ const actions = {
         quality: item.quality,
         audioOnly: item.audioOnly,
         downloadDir: item.downloadDir,
-        ytdlpPath: item.ytdlpPath
+        ytdlpPath: item.ytdlpPath,
+        sponsorBlockRemove: item.sponsorBlockRemove,
+        sponsorBlockApi: item.sponsorBlockApi
       })
     }
   }

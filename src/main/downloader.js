@@ -63,7 +63,7 @@ export function handleStartDownload(event, payload) {
     return
   }
 
-  const { videoUrl, quality, audioOnly, downloadDir, ytdlpPath } = payload
+  const { videoUrl, quality, audioOnly, downloadDir, ytdlpPath, sponsorBlockRemove, sponsorBlockApi } = payload
 
   // Check if already downloading this URL
   if (activeDownloads.has(videoUrl)) {
@@ -108,6 +108,14 @@ export function handleStartDownload(event, payload) {
   // Setup download path
   const targetDir = downloadDir && downloadDir.trim() !== '' ? downloadDir.trim() : app.getPath('downloads')
   args.push('-o', `${targetDir}/%(title)s.%(ext)s`)
+
+  // Add SponsorBlock options if enabled
+  if (sponsorBlockRemove) {
+    args.push('--sponsorblock-remove', sponsorBlockRemove)
+  }
+  if (sponsorBlockApi) {
+    args.push('--sponsorblock-api', sponsorBlockApi)
+  }
 
   let downloadProcess
   try {
@@ -177,7 +185,7 @@ export function handleCancelDownload(event, videoUrl) {
   if (proc) {
     try {
       proc.kill()
-    } catch {}
+    } catch { }
     activeDownloads.delete(videoUrl)
   }
 }
@@ -187,7 +195,7 @@ app.on('will-quit', () => {
   for (const [url, proc] of activeDownloads.entries()) {
     try {
       proc.kill()
-    } catch {}
+    } catch { }
   }
   activeDownloads.clear()
 })
