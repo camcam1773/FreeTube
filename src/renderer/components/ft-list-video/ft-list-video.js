@@ -273,6 +273,12 @@ export default defineComponent({
           value: 'history'
         }
       ]
+      if (process.env.IS_ELECTRON && !this.isLive && !this.isUpcoming) {
+        options.push({
+          label: this.$t('Video.Download'),
+          value: 'download'
+        })
+      }
       if (!this.hideSharingActions) {
         options.push(
           {
@@ -691,6 +697,12 @@ export default defineComponent({
             this.markAsWatched()
           }
           break
+        case 'download':
+          this.showDownloadPrompt({
+            videoId: this.id,
+            title: this.title
+          })
+          break
         case 'copyYoutube':
           copyToClipboard(this.youtubeShareUrl, { messageOnSuccess: this.$t('Share.YouTube URL copied to clipboard') })
           break
@@ -928,6 +940,7 @@ export default defineComponent({
       'showAddToPlaylistPromptForManyVideos',
       'addVideo',
       'removeVideo',
+      'showDownloadPrompt',
     ])
   }
 })
