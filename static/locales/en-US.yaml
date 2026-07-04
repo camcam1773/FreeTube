@@ -712,6 +712,9 @@ Settings:
     Clear: Clear
     Default System Path: Default (Look up in PATH)
     Ytdlp Description: "To download and merge high-quality video formats (above 360p/720p), yt-dlp requires 'ffmpeg' to be installed and available in your system PATH. If ffmpeg is not present, only audio or separate/low-quality streams can be saved."
+    File Size: File Size
+    Calculating: Calculating...
+    Unknown Size: Unknown
     Download Video/Audio: Download Video / Audio
     Download Type: Download Type
     Video: Video

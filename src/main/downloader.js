@@ -190,6 +190,63 @@ export function handleCancelDownload(event, videoUrl) {
   }
 }
 
+/**
+ * Handle IPC invoke get-download-metadata
+ */
+export async function handleGetDownloadMetadata(event, payload) {
+  if (!isFreeTubeUrl(event.senderFrame.url)) {
+    return null
+  }
+
+  const { videoUrl, ytdlpPath } = payload
+  const exePath = ytdlpPath && ytdlpPath.trim() !== '' ? ytdlpPath.trim() : 'yt-dlp'
+
+  const args = [
+    '--ignore-config',
+    '--simulate',
+    '--dump-json',
+    videoUrl
+  ]
+
+  return new Promise((resolve) => {
+    let stdoutData = ''
+    let stderrData = ''
+    let child
+
+    try {
+      child = spawn(exePath, args)
+    } catch (err) {
+      resolve({ success: false, error: `Failed to spawn yt-dlp: ${err.message}` })
+      return
+    }
+
+    child.stdout.on('data', (data) => {
+      stdoutData += data.toString()
+    })
+
+    child.stderr.on('data', (data) => {
+      stderrData += data.toString()
+    })
+
+    child.on('error', (err) => {
+      resolve({ success: false, error: `Failed to run yt-dlp: ${err.message}` })
+    })
+
+    child.on('close', (code) => {
+      if (code === 0) {
+        try {
+          const metadata = JSON.parse(stdoutData)
+          resolve({ success: true, metadata })
+        } catch (err) {
+          resolve({ success: false, error: `Failed to parse metadata: ${err.message}` })
+        }
+      } else {
+        resolve({ success: false, error: stderrData.trim() || `Process exited with code ${code}` })
+      }
+    })
+  })
+}
+
 // Cleanup active downloads when the app exits
 app.on('will-quit', () => {
   for (const [url, proc] of activeDownloads.entries()) {

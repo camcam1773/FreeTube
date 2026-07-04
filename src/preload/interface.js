@@ -340,6 +340,14 @@ export default {
   },
 
   /**
+   * @param {{ videoUrl: string, ytdlpPath: string }} payload
+   * @returns {Promise<{ success: boolean, metadata?: any, error?: string }>}
+   */
+  getDownloadMetadata: (payload) => {
+    return ipcRenderer.invoke(IpcChannels.GET_DOWNLOAD_METADATA, payload)
+  },
+
+  /**
    * @param {{ videoUrl: string, quality: string, audioOnly: boolean, downloadDir: string, ytdlpPath: string, sponsorBlockRemove?: string, sponsorBlockApi?: string }} payload
    */
   startDownload: (payload) => {

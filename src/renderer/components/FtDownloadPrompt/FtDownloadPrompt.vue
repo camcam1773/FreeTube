@@ -46,6 +46,26 @@
           </select>
         </FtFlexBox>
 
+        <!-- File Size Display -->
+        <FtFlexBox class="form-row">
+          <p class="row-label">{{ t('Settings.Download Settings.File Size') }}</p>
+          <span class="file-size-value">
+            <template v-if="metadataLoading">
+              <span class="loading-spinner-small"></span>
+              {{ t('Settings.Download Settings.Calculating') }}
+            </template>
+            <template v-else-if="metadataError">
+              <span class="error-text" :title="metadataError">{{ t('Settings.Download Settings.Unknown Size') }}</span>
+            </template>
+            <template v-else-if="estimatedSize">
+              <strong>{{ estimatedSize }}</strong>
+            </template>
+            <template v-else>
+              {{ t('Settings.Download Settings.Unknown Size') }}
+            </template>
+          </span>
+        </FtFlexBox>
+
         <!-- Destination Directory selection -->
         <FtFlexBox class="form-row folder-row">
           <p class="row-label">{{ t('Settings.Download Settings.Save Folder') }}</p>
@@ -226,6 +246,120 @@ function startDownload() {
 function closePrompt() {
   store.dispatch('hideDownloadPrompt')
 }
+
+// Metadata state
+const metadata = ref(null)
+const metadataLoading = ref(false)
+const metadataError = ref('')
+
+async function fetchMetadata() {
+  if (!videoUrl.value) return
+  metadataLoading.value = true
+  metadataError.value = ''
+  metadata.value = null
+  try {
+    const result = await window.ftElectron.getDownloadMetadata({
+      videoUrl: videoUrl.value,
+      ytdlpPath: ytdlpPath.value
+    })
+    if (result && result.success) {
+      metadata.value = result.metadata
+    } else {
+      metadataError.value = result?.error || 'Failed to fetch metadata'
+    }
+  } catch (err) {
+    metadataError.value = err.message
+  } finally {
+    metadataLoading.value = false
+  }
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
+
+const estimatedSize = computed(() => {
+  if (!metadata.value || !metadata.value.formats) {
+    return null
+  }
+
+  const formats = metadata.value.formats
+  let sizeBytes = 0
+
+  if (audioOnly.value) {
+    // Audio Only: best or mp3
+    const audioFormats = formats.filter((f) => f.acodec && f.acodec !== 'none' && (!f.vcodec || f.vcodec === 'none'))
+    if (audioFormats.length > 0) {
+      audioFormats.sort((a, b) => {
+        const sizeA = a.filesize || a.filesize_approx || 0
+        const sizeB = b.filesize || b.filesize_approx || 0
+        return sizeB - sizeA
+      })
+      const bestAudio = audioFormats[0]
+      sizeBytes = bestAudio.filesize || bestAudio.filesize_approx || 0
+    }
+  } else {
+    // Video + Audio
+    let videoStreamSize = 0
+    let videoFormats = formats.filter((f) => f.vcodec && f.vcodec !== 'none' && (!f.acodec || f.acodec === 'none'))
+
+    if (selectedQuality.value !== 'best') {
+      const targetHeight = parseInt(selectedQuality.value)
+      if (!isNaN(targetHeight)) {
+        videoFormats = videoFormats.filter((f) => f.height <= targetHeight)
+      }
+    }
+
+    if (videoFormats.length > 0) {
+      videoFormats.sort((a, b) => {
+        if (a.height !== b.height) {
+          return b.height - a.height
+        }
+        const sizeA = a.filesize || a.filesize_approx || 0
+        const sizeB = b.filesize || b.filesize_approx || 0
+        return sizeB - sizeA
+      })
+      const bestVideo = videoFormats[0]
+      videoStreamSize = bestVideo.filesize || bestVideo.filesize_approx || 0
+    } else {
+      const anyVideoFormats = formats.filter((f) => f.vcodec && f.vcodec !== 'none')
+      if (anyVideoFormats.length > 0) {
+        anyVideoFormats.sort((a, b) => {
+          const sizeA = a.filesize || a.filesize_approx || 0
+          const sizeB = b.filesize || b.filesize_approx || 0
+          return sizeB - sizeA
+        })
+        videoStreamSize = anyVideoFormats[0].filesize || anyVideoFormats[0].filesize_approx || 0
+      }
+    }
+
+    let audioStreamSize = 0
+    const audioFormats = formats.filter((f) => f.acodec && f.acodec !== 'none' && (!f.vcodec || f.vcodec === 'none'))
+    if (audioFormats.length > 0) {
+      audioFormats.sort((a, b) => {
+        const sizeA = a.filesize || a.filesize_approx || 0
+        const sizeB = b.filesize || b.filesize_approx || 0
+        return sizeB - sizeA
+      })
+      const bestAudio = audioFormats[0]
+      audioStreamSize = bestAudio.filesize || bestAudio.filesize_approx || 0
+    }
+
+    sizeBytes = videoStreamSize + audioStreamSize
+  }
+
+  if (sizeBytes === 0) return null
+
+  return `~${formatBytes(sizeBytes)}`
+})
+
+onMounted(() => {
+  fetchMetadata()
+})
 </script>
 
 <style scoped>
@@ -382,5 +516,27 @@ function closePrompt() {
   margin-bottom: 1.5rem;
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+.file-size-value {
+  font-size: 0.95rem;
+  color: var(--main-text-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.loading-spinner-small {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--main-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

@@ -52,7 +52,8 @@ const IpcChannels = {
   CHOOSE_DIRECTORY: 'choose-directory',
   CHOOSE_FILE: 'choose-file',
   START_DOWNLOAD: 'start-download',
-  CANCEL_DOWNLOAD: 'cancel-download'
+  CANCEL_DOWNLOAD: 'cancel-download',
+  GET_DOWNLOAD_METADATA: 'get-download-metadata'
 }
 
 const DBActions = {
