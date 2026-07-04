@@ -321,5 +321,58 @@ export default {
     ipcRenderer.on(IpcChannels.SYNC_SUBSCRIPTION_CACHE, (_, { event, data }) => {
       handler(event, data)
     })
+  },
+
+  /**
+   * @param {string | undefined} currentPath
+   * @returns {Promise<string | null>}
+   */
+  chooseDirectory: (currentPath) => {
+    return ipcRenderer.invoke(IpcChannels.CHOOSE_DIRECTORY, currentPath)
+  },
+
+  /**
+   * @param {string | undefined} currentPath
+   * @returns {Promise<string | null>}
+   */
+  chooseFile: (currentPath) => {
+    return ipcRenderer.invoke(IpcChannels.CHOOSE_FILE, currentPath)
+  },
+
+  /**
+   * @param {{ videoUrl: string, quality: string, audioOnly: boolean, downloadDir: string, ytdlpPath: string }} payload
+   */
+  startDownload: (payload) => {
+    ipcRenderer.send(IpcChannels.START_DOWNLOAD, payload)
+  },
+
+  /**
+   * @param {(progress: { percent: string, speed: string, eta: string }) => void} handler
+   */
+  onDownloadProgress: (handler) => {
+    ipcRenderer.removeAllListeners('download-progress')
+    ipcRenderer.on('download-progress', (_, progress) => {
+      handler(progress)
+    })
+  },
+
+  /**
+   * @param {() => void} handler
+   */
+  onDownloadFinished: (handler) => {
+    ipcRenderer.removeAllListeners('download-finished')
+    ipcRenderer.on('download-finished', () => {
+      handler()
+    })
+  },
+
+  /**
+   * @param {(error: string) => void} handler
+   */
+  onDownloadError: (handler) => {
+    ipcRenderer.removeAllListeners('download-error')
+    ipcRenderer.on('download-error', (_, error) => {
+      handler(error)
+    })
   }
 }

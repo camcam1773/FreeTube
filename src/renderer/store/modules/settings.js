@@ -176,6 +176,8 @@ const state = {
   externalLinkHandling: '',
   externalPlayer: '',
   externalPlayerExecutable: '',
+  ytdlpPath: '',
+  downloadFolderPath: '',
   externalPlayerIgnoreWarnings: false,
   externalPlayerIgnoreDefaultArgs: false,
   externalPlayerCustomArgs: '[]',

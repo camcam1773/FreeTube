@@ -685,6 +685,31 @@ Settings:
     Set Password To Prevent Access: Set a password to prevent access to settings
     Set Password: Set Password
     Remove Password: Remove Password
+  Download Settings:
+    Download Settings: Downloads
+    Download Folder Label: Download Folder
+    Browse Folder Button: Select Folder
+    Default System Downloads: Default (System Downloads)
+    Ytdlp Path Label: yt-dlp Executable Path
+    Browse File Button: Select File
+    Clear: Clear
+    Default System Path: Default (Look up in PATH)
+    Ytdlp Description: "To download and merge high-quality video formats (above 360p/720p), yt-dlp requires 'ffmpeg' to be installed and available in your system PATH. If ffmpeg is not present, only audio or separate/low-quality streams can be saved."
+    Download Video/Audio: Download Video / Audio
+    Download Type: Download Type
+    Video: Video
+    Audio Only: Audio Only
+    Quality: Quality
+    Best Quality: Best Quality
+    Save Folder: Save Folder
+    Start Download: Start Download
+    Cancel: Cancel
+    Downloading: Downloading...
+    ETA: ETA
+    Download Complete: Download Complete!
+    Saved To: Saved to
+    Download Failed: Download Failed
+    Retry: Retry
 About:
   #On About page
   About: About
