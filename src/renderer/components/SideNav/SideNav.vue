@@ -138,6 +138,27 @@
           {{ $t("History.History") }}
         </p>
       </router-link>
+      <router-link
+        class="navOption mobileShow"
+        role="button"
+        to="/downloads"
+        :title="t('Settings.Download Settings.Download Settings')"
+      >
+        <div
+          class="thumbnailContainer"
+        >
+          <FontAwesomeIcon
+            :icon="['fas', 'download']"
+            class="navIcon"
+            :class="applyNavIconExpand"
+          />
+        </div>
+        <p
+          class="navLabel"
+        >
+          {{ t('Settings.Download Settings.Download Settings') }}
+        </p>
+      </router-link>
       <hr>
       <router-link
         class="navOption mobileShow smallMobileOnlyHidden"

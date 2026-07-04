@@ -119,6 +119,13 @@
             :dropdown-options="formatTypeOptions"
             @click="changeFormat"
           />
+          <FtIconButton
+            v-if="USING_ELECTRON"
+            :title="t('Download Video / Audio')"
+            theme="secondary"
+            :icon="['fas', 'download']"
+            @click="openDownloadPrompt"
+          />
           <FtShareButton
             v-if="!hideSharingActions"
             :id="id"
@@ -390,6 +397,13 @@ function handleExternalPlayer() {
       showToast(t('Video.Video has been marked as watched'))
     }
   }
+}
+
+function openDownloadPrompt() {
+  store.dispatch('showDownloadPrompt', {
+    videoId: props.id,
+    title: props.title
+  })
 }
 
 onMounted(() => {

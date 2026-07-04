@@ -103,35 +103,37 @@ const getters = {
 
 const actions = {
   async addPlaylist({ state, commit, rootState, dispatch }, payload) {
-    processNewPlayist(payload)
+    const playlist = deepCopy(payload)
+    processNewPlayist(playlist)
 
     try {
-      await DBPlaylistHandlers.create([payload])
+      await DBPlaylistHandlers.create([playlist])
 
       const noQuickBookmarkSet = !rootState.settings.quickBookmarkTargetPlaylistId || !state.playlists.some((playlist) => playlist._id === rootState.settings.quickBookmarkTargetPlaylistId)
       if (noQuickBookmarkSet) {
-        dispatch('updateQuickBookmarkTargetPlaylistId', payload._id, { root: true })
+        dispatch('updateQuickBookmarkTargetPlaylistId', playlist._id, { root: true })
       }
 
-      commit('addPlaylist', payload)
+      commit('addPlaylist', playlist)
     } catch (errMessage) {
       console.error(errMessage)
     }
   },
 
   async addPlaylists({ state, commit, rootState, dispatch }, payload) {
-    payload.forEach(processNewPlayist)
+    const clonedPayload = deepCopy(payload)
+    clonedPayload.forEach(processNewPlayist)
 
     try {
-      await DBPlaylistHandlers.create(payload)
+      await DBPlaylistHandlers.create(clonedPayload)
 
       const noQuickBookmarkSet = !rootState.settings.quickBookmarkTargetPlaylistId || !state.playlists.some((playlist) => playlist._id === rootState.settings.quickBookmarkTargetPlaylistId)
       if (noQuickBookmarkSet) {
-        const chosenPlaylist = findEmptyOrLatestPlayedPlaylist(payload)
+        const chosenPlaylist = findEmptyOrLatestPlayedPlaylist(clonedPayload)
         dispatch('updateQuickBookmarkTargetPlaylistId', chosenPlaylist._id, { root: true })
       }
 
-      commit('addPlaylists', payload)
+      commit('addPlaylists', clonedPayload)
     } catch (errMessage) {
       console.error(errMessage)
     }

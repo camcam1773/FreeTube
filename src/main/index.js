@@ -28,6 +28,7 @@ import packageDetails from '../../package.json'
 import { handleOpenInExternalPlayer } from './externalPlayer'
 import { generatePoToken } from './poTokenGenerator'
 import { isFreeTubeUrl } from './utils'
+import { handleChooseDirectory, handleChooseFile, handleStartDownload, handleCancelDownload, handleGetDownloadMetadata } from './downloader'
 
 const brotliDecompressAsync = promisify(brotliDecompress)
 
@@ -1542,6 +1543,12 @@ function runApp() {
   })
 
   ipcMain.on(IpcChannels.OPEN_IN_EXTERNAL_PLAYER, handleOpenInExternalPlayer)
+
+  ipcMain.handle(IpcChannels.CHOOSE_DIRECTORY, handleChooseDirectory)
+  ipcMain.handle(IpcChannels.CHOOSE_FILE, handleChooseFile)
+  ipcMain.handle(IpcChannels.GET_DOWNLOAD_METADATA, handleGetDownloadMetadata)
+  ipcMain.on(IpcChannels.START_DOWNLOAD, handleStartDownload)
+  ipcMain.on(IpcChannels.CANCEL_DOWNLOAD, handleCancelDownload)
 
   ipcMain.handle(IpcChannels.GET_REPLACE_HTTP_CACHE, (event) => {
     if (isFreeTubeUrl(event.senderFrame.url)) {
