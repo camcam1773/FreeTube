@@ -51,6 +51,8 @@ export function translateWindowTitle(title) {
       return i18n.global.t('Profile.Profile Settings')
     case 'Playlist':
       return i18n.global.t('Playlist.Playlist')
+    case 'Downloads':
+      return i18n.global.t('Settings.Download Settings.Download Settings')
     default:
       return null
   }

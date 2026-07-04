@@ -300,4 +300,44 @@ if (process.env.IS_ELECTRON) {
       showToast(i18n.global.t('Video.External Player.OpeningTemplate', { videoOrPlaylist, externalPlayer }))
     }
   )
+
+  window.ftElectron.onDownloadProgress((progress) => {
+    store.commit('UPDATE_DOWNLOAD', {
+      videoUrl: progress.videoUrl,
+      updates: {
+        percent: progress.percent,
+        speed: progress.speed,
+        eta: progress.eta
+      }
+    })
+  })
+
+  window.ftElectron.onDownloadFinished(({ videoUrl }) => {
+    store.commit('UPDATE_DOWNLOAD', {
+      videoUrl,
+      updates: {
+        status: 'completed',
+        percent: '100',
+        speed: '',
+        eta: ''
+      }
+    })
+    store.dispatch('processQueue')
+  })
+
+  window.ftElectron.onDownloadError(({ videoUrl, error }) => {
+    const item = store.state.downloads.queue.find((d) => d.videoUrl === videoUrl)
+    if (item && item.status === 'downloading') {
+      store.commit('UPDATE_DOWNLOAD', {
+        videoUrl,
+        updates: {
+          status: 'error',
+          errorMsg: error,
+          speed: '',
+          eta: ''
+        }
+      })
+      store.dispatch('processQueue')
+    }
+  })
 }

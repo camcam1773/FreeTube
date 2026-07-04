@@ -175,50 +175,28 @@ async function changeFolder() {
 }
 
 function startDownload() {
-  state.value = 'downloading'
-  percent.value = '0'
-  speed.value = ''
-  eta.value = ''
-  errorMsg.value = ''
-
-  if (process.env.IS_ELECTRON) {
-    window.ftElectron.startDownload({
-      videoUrl: videoUrl.value,
-      quality: selectedQuality.value,
-      audioOnly: audioOnly.value,
-      downloadDir: downloadFolderPath.value,
-      ytdlpPath: ytdlpPath.value
-    })
+  const downloadObj = {
+    videoId: videoId.value,
+    title: title.value,
+    videoUrl: videoUrl.value,
+    quality: selectedQuality.value,
+    audioOnly: audioOnly.value,
+    downloadDir: downloadFolderPath.value,
+    ytdlpPath: ytdlpPath.value,
+    status: 'pending',
+    percent: '0',
+    speed: '',
+    eta: '',
+    errorMsg: ''
   }
+
+  store.dispatch('addDownload', downloadObj)
+  closePrompt()
 }
 
 function closePrompt() {
   store.dispatch('hideDownloadPrompt')
 }
-
-// Progress and lifecycle listeners
-onMounted(() => {
-  if (process.env.IS_ELECTRON) {
-    window.ftElectron.onDownloadProgress((progress) => {
-      percent.value = progress.percent
-      speed.value = progress.speed
-      eta.value = progress.eta
-    })
-
-    window.ftElectron.onDownloadFinished(() => {
-      state.value = 'success'
-    })
-
-    window.ftElectron.onDownloadError((err) => {
-      state.value = 'error'
-      errorMsg.value = err
-    })
-  }
-})
-
-onBeforeUnmount(() => {
-  // Clean up IPC listeners if any, usually done in preload, but safe here
-})
 </script>
 
 <style scoped>

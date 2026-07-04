@@ -347,7 +347,14 @@ export default {
   },
 
   /**
-   * @param {(progress: { percent: string, speed: string, eta: string }) => void} handler
+   * @param {string} videoUrl
+   */
+  cancelDownload: (videoUrl) => {
+    ipcRenderer.send(IpcChannels.CANCEL_DOWNLOAD, videoUrl)
+  },
+
+  /**
+   * @param {(progress: { videoUrl: string, percent: string, speed: string, eta: string }) => void} handler
    */
   onDownloadProgress: (handler) => {
     ipcRenderer.removeAllListeners('download-progress')
@@ -357,22 +364,22 @@ export default {
   },
 
   /**
-   * @param {() => void} handler
+   * @param {(payload: { videoUrl: string }) => void} handler
    */
   onDownloadFinished: (handler) => {
     ipcRenderer.removeAllListeners('download-finished')
-    ipcRenderer.on('download-finished', () => {
-      handler()
+    ipcRenderer.on('download-finished', (_, payload) => {
+      handler(payload)
     })
   },
 
   /**
-   * @param {(error: string) => void} handler
+   * @param {(payload: { videoUrl: string, error: string }) => void} handler
    */
   onDownloadError: (handler) => {
     ipcRenderer.removeAllListeners('download-error')
-    ipcRenderer.on('download-error', (_, error) => {
-      handler(error)
+    ipcRenderer.on('download-error', (_, payload) => {
+      handler(payload)
     })
   }
 }

@@ -113,7 +113,7 @@ export function handleStartDownload(event, payload) {
   try {
     downloadProcess = spawn(exePath, args)
   } catch (err) {
-    event.sender.send('download-error', `Failed to start yt-dlp: ${err.message}`)
+    event.sender.send('download-error', { videoUrl, error: `Failed to start yt-dlp: ${err.message}` })
     return
   }
 
@@ -139,7 +139,7 @@ export function handleStartDownload(event, payload) {
           const etaMatch = line.match(/ETA\s+([^\s]+)/)
           if (etaMatch) eta = etaMatch[1]
 
-          event.sender.send('download-progress', { percent, speed, eta })
+          event.sender.send('download-progress', { videoUrl, percent, speed, eta })
         }
       }
     }
@@ -151,18 +151,35 @@ export function handleStartDownload(event, payload) {
 
   downloadProcess.on('error', (err) => {
     activeDownloads.delete(videoUrl)
-    event.sender.send('download-error', `Process error: ${err.message}`)
+    event.sender.send('download-error', { videoUrl, error: `Process error: ${err.message}` })
   })
 
   downloadProcess.on('close', (code) => {
     activeDownloads.delete(videoUrl)
     if (code === 0) {
-      event.sender.send('download-finished')
+      event.sender.send('download-finished', { videoUrl })
     } else {
       const errorMsg = lastStderr.trim() || `Process exited with code ${code}`
-      event.sender.send('download-error', errorMsg)
+      event.sender.send('download-error', { videoUrl, error: errorMsg })
     }
   })
+}
+
+/**
+ * Handle IPC send cancel-download
+ */
+export function handleCancelDownload(event, videoUrl) {
+  if (!isFreeTubeUrl(event.senderFrame.url)) {
+    return
+  }
+
+  const proc = activeDownloads.get(videoUrl)
+  if (proc) {
+    try {
+      proc.kill()
+    } catch {}
+    activeDownloads.delete(videoUrl)
+  }
 }
 
 // Cleanup active downloads when the app exits
