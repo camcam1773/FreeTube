@@ -36,6 +36,9 @@ Version {versionNumber} is now available!  Click for more details:
   for more details
 Download From Site: Download From Site
 Are you sure you want to open this link?: Are you sure you want to open this link?
+Clear All: Clear All
+Clear Completed: Clear Completed
+subscriptions: Subscriptions
 
 # Global
 # Anything shared among components / views should be put here
