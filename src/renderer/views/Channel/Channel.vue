@@ -38,51 +38,37 @@
         :tags="tags"
         :related-channels="relatedChannels"
       />
-      <div class="select-container">
-        <FtButton
-          v-if="showViewAllButton"
-          style="margin-top: 33px;"
-          :label="$t('Channel.View All')"
-          @click="router.push(currentTabViewAllRoute)"
-        />
-        <FtSelect
+      <div class="sort-container">
+        <FtSortChips
           v-if="showVideoSortBy"
           v-show="currentTab === 'videos' && (showFetchMoreButton || filteredVideos.length > 1)"
           :value="videoSortBy"
           :select-names="videoLiveShortSelectNames"
           :select-values="videoLiveShortSelectValues"
-          :placeholder="$t('Global.Sort By')"
-          :icon="getIconForSortPreference(videoSortBy)"
           @change="videoSortBy = $event"
         />
-        <FtSelect
+        <FtSortChips
           v-if="!hideChannelShorts && showShortSortBy"
           v-show="currentTab === 'shorts' && (showFetchMoreButton || filteredShorts.length > 1)"
           :value="shortSortBy"
           :select-names="videoLiveShortSelectNames"
           :select-values="videoLiveShortSelectValues"
-          :placeholder="$t('Global.Sort By')"
-          :icon="getIconForSortPreference(shortSortBy)"
           @change="shortSortBy = $event"
         />
-        <FtSelect
+        <FtSortChips
           v-if="!hideLiveStreams && showLiveSortBy"
           v-show="currentTab === 'live' && (showFetchMoreButton || filteredLive.length > 1)"
           :value="liveSortBy"
           :select-names="videoLiveShortSelectNames"
           :select-values="videoLiveShortSelectValues"
-          :placeholder="$t('Global.Sort By')"
-          :icon="getIconForSortPreference(liveSortBy)"
           @change="liveSortBy = $event"
         />
-        <FtSelect
+        <FtSortChips
           v-if="!hideChannelPlaylists && showPlaylistSortBy"
           v-show="currentTab === 'playlists' && latestPlaylists.length > 0"
           :value="playlistSortBy"
           :select-names="playlistSelectNames"
           :select-values="PLAYLIST_SELECT_VALUES"
-          :placeholder="$t('Global.Sort By')"
-          :icon="getIconForSortPreference(playlistSortBy)"
           @change="playlistSortBy = $event"
         />
       </div>
@@ -284,8 +270,7 @@ import FtCard from '../../components/ft-card/ft-card.vue'
 import FtElementList from '../../components/FtElementList/FtElementList.vue'
 import FtFlexBox from '../../components/ft-flex-box/ft-flex-box.vue'
 import FtLoader from '../../components/FtLoader/FtLoader.vue'
-import FtSelect from '../../components/FtSelect/FtSelect.vue'
-import FtButton from '../../components/FtButton/FtButton.vue'
+import FtSortChips from '../../components/FtSortChips/FtSortChips.vue'
 
 import store from '../../store/index'
 
@@ -294,7 +279,6 @@ import {
   extractNumberFromString,
   showToast,
   getChannelPlaylistId,
-  getIconForSortPreference,
   removeFromArrayIfExists
 } from '../../helpers/utils'
 import { isNullOrEmpty } from '../../helpers/strings'

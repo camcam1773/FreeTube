@@ -17,6 +17,12 @@ const i18n = createI18n({
     'pt-BR': ['pt'],
     // pt-PT -> pt -> en-US
     'pt-PT': ['pt'],
+    'en-GB': ['en-US'],
+    'en': ['en-US'],
+    'de-DE': ['en-US'],
+    'fr-FR': ['en-US'],
+    'zh-CN': ['en-US'],
+    'zh-TW': ['en-US'],
     // any -> en-US
     default: ['en-US'],
   }
