@@ -121,6 +121,7 @@ export function handleStartDownload(event, payload) {
   try {
     downloadProcess = spawn(exePath, args)
   } catch (err) {
+    console.error(`Failed to start yt-dlp: ${err.message}`)
     event.sender.send('download-error', { videoUrl, error: `Failed to start yt-dlp: ${err.message}` })
     return
   }
@@ -158,6 +159,7 @@ export function handleStartDownload(event, payload) {
   })
 
   downloadProcess.on('error', (err) => {
+    console.error(`yt-dlp process error: ${err.message}`)
     activeDownloads.delete(videoUrl)
     event.sender.send('download-error', { videoUrl, error: `Process error: ${err.message}` })
   })
@@ -168,6 +170,7 @@ export function handleStartDownload(event, payload) {
       event.sender.send('download-finished', { videoUrl })
     } else {
       const errorMsg = lastStderr.trim() || `Process exited with code ${code}`
+      console.error(`yt-dlp error: ${errorMsg}`)
       event.sender.send('download-error', { videoUrl, error: errorMsg })
     }
   })
@@ -216,6 +219,7 @@ export async function handleGetDownloadMetadata(event, payload) {
     try {
       child = spawn(exePath, args)
     } catch (err) {
+      console.error(`Failed to spawn yt-dlp: ${err.message}`)
       resolve({ success: false, error: `Failed to spawn yt-dlp: ${err.message}` })
       return
     }
@@ -229,6 +233,7 @@ export async function handleGetDownloadMetadata(event, payload) {
     })
 
     child.on('error', (err) => {
+      console.error(`yt-dlp metadata process error: ${err.message}`)
       resolve({ success: false, error: `Failed to run yt-dlp: ${err.message}` })
     })
 
@@ -238,10 +243,13 @@ export async function handleGetDownloadMetadata(event, payload) {
           const metadata = JSON.parse(stdoutData)
           resolve({ success: true, metadata })
         } catch (err) {
+          console.error(`Failed to parse metadata: ${err.message}`)
           resolve({ success: false, error: `Failed to parse metadata: ${err.message}` })
         }
       } else {
-        resolve({ success: false, error: stderrData.trim() || `Process exited with code ${code}` })
+        const errorMsg = stderrData.trim() || `Process exited with code ${code}`
+        console.error(`yt-dlp metadata error: ${errorMsg}`)
+        resolve({ success: false, error: errorMsg })
       }
     })
   })
