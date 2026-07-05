@@ -1,0 +1,37 @@
+.sort-chips {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block-start: 10px;
+  margin-block-end: 10px;
+}
+
+.sort-chip {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  padding-block: 6px;
+  padding-inline: 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background-color: var(--search-bar-color);
+  color: var(--primary-text-color);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.sort-chip:hover {
+  background-color: var(--side-nav-hover-color);
+}
+
+.sort-chip:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.sort-chip.active {
+  background-color: var(--primary-color);
+  color: var(--text-with-accent-color);
+  font-weight: 600;
+}
