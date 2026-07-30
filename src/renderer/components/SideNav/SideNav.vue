@@ -138,6 +138,28 @@
           {{ $t("History.History") }}
         </p>
       </router-link>
+      <router-link
+        v-if="USING_ELECTRON"
+        class="navOption mobileShow"
+        role="button"
+        to="/downloads"
+        :title="$t('Settings.Download Settings.Download Settings')"
+      >
+        <div
+          class="thumbnailContainer"
+        >
+          <FontAwesomeIcon
+            :icon="['fas', 'download']"
+            class="navIcon"
+            :class="applyNavIconExpand"
+          />
+        </div>
+        <p
+          class="navLabel"
+        >
+          {{ $t('Settings.Download Settings.Download Settings') }}
+        </p>
+      </router-link>
       <hr>
       <router-link
         class="navOption mobileShow smallMobileOnlyHidden"
@@ -242,6 +264,7 @@ import { KeyboardShortcuts } from '../../../constants'
 const { locale, t } = useI18n()
 
 const SUPPORTS_LOCAL_API = process.env.SUPPORTS_LOCAL_API
+const USING_ELECTRON = !!process.env.IS_ELECTRON
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const isOpen = computed(() => {

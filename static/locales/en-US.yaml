@@ -507,6 +507,58 @@ Settings:
     Players:
       None:
         Name: None
+  Download Settings:
+    Download Settings: Downloads
+    Download Folder Label: Download Folder
+    Browse Folder Button: Browse...
+    Browse File Button: Browse...
+    Ytdlp Path Label: yt-dlp Executable Path
+    Ytdlp Description: Custom path to yt-dlp executable. Leave empty to use system default yt-dlp binary.
+    Default System Downloads: System Downloads Folder
+    Default System Path: System Path (yt-dlp)
+    Download Video/Audio: Download Video / Audio
+    Download Type: Download Type
+    Video: Video
+    Audio Only: Audio Only
+    Quality: Quality
+    Best Quality: Best Quality
+    File Size: Estimated Size
+    Calculating: Calculating...
+    Unknown Size: Unknown Size
+    Save Folder: Save Folder
+    Start Download: Start Download
+    Cancel: Cancel
+    Downloading: Downloading...
+    ETA: ETA
+    Download Complete: Download Complete
+    Saved To: Saved To
+    Download Failed: Download Failed
+    Retry: Retry
+    Clear: Clear
+    Clear Completed: Clear Completed
+    Clear All: Clear All
+    Show Command: Show Command
+    Hide Command: Hide Command
+    Copy Command: Copy Command
+    Command Copied: Command copied to clipboard
+    Empty Queue: Your download queue is empty.
+    Empty Queue Subtext: Start downloading videos or audio to see them here.
+    Pending: Pending
+    Downloading Status: Downloading...
+    Completed: Completed
+    Failed: Failed
+    Retry Download: Retry download
+    Cancel Download: Cancel download
+    Remove From List: Remove from list
+    Res2160p: 2160p (4K)
+    Res1440p: 1440p (2K)
+    Res1080p: 1080p
+    Res720p: 720p
+    Res480p: 480p
+    Res360p: 360p
+    AudioMp3: MP3
+    BestQualityAudio: Best Quality (M4A/WebM)
+    DotSeparator: " · "
   Privacy Settings:
     Privacy Settings: Privacy
     Remember History: Remember Watch History
@@ -849,6 +901,7 @@ Video:
   DRMProtected: DRM protected videos cannot be played in FreeTube, as they require proprietary, closed source components. If you want to watch this video please watch it on the official YouTube website in a DRM enabled web browser.
   Private: Private videos cannot be watched in FreeTube as they require Google login and ownership of the video.
   More Options: More Options
+  Download: Download
   Mark As Watched: Mark As Watched
   Remove From History: Remove From History
   Video has been marked as watched: Video has been marked as watched

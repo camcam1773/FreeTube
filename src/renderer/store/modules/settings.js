@@ -185,6 +185,8 @@ const state = {
   externalLinkHandling: '',
   externalPlayer: '',
   externalPlayerExecutable: '',
+  ytdlpPath: '',
+  downloadFolderPath: '',
   externalPlayerIgnoreWarnings: false,
   externalPlayerIgnoreDefaultArgs: false,
   externalPlayerCustomArgs: '[]',
@@ -440,6 +442,9 @@ export const NON_TRANSFERABLE_SETTINGS = new Set([
   'externalPlayerIgnoreDefaultArgs',
   'externalPlayerCustomArgs',
   'showAddedExternalPlayerCustomArgs',
+  // DownloadSettings
+  'ytdlpPath',
+  'downloadFolderPath',
   // Others
   'disableSmoothScrolling',
   'hideToTrayOnMinimize',

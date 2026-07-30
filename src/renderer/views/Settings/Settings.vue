@@ -72,6 +72,7 @@ import SubscriptionSettings from '../../components/SubscriptionSettings/Subscrip
 import PrivacySettings from '../../components/PrivacySettings.vue'
 import DataSettings from '../../components/DataSettings/DataSettings.vue'
 import DistractionSettings from '../../components/DistractionSettings/DistractionSettings.vue'
+import DownloadSettings from '../../components/DownloadSettings/DownloadSettings.vue'
 import ProxySettings from '../../components/ProxySettings/ProxySettings.vue'
 import SponsorBlockSettings from '../../components/SponsorBlockSettings.vue'
 import ParentalControlSettings from '../../components/ParentalControlSettings.vue'
@@ -116,6 +117,12 @@ const settingsComponentsData = computed(() => {
           title: t('Settings.External Player Settings.External Player Settings'),
           icon: ['fas', 'clapperboard'],
           component: ExternalPlayerSettings
+        },
+        {
+          type: 'download',
+          title: t('Settings.Download Settings.Download Settings'),
+          icon: ['fas', 'download'],
+          component: DownloadSettings
         }]
       : []),
     {
