@@ -323,5 +323,73 @@ export default {
     ipcRenderer.on(IpcChannels.SYNC_SUBSCRIPTION_CACHE, (_, { event, data }) => {
       handler(event, data)
     })
+  },
+
+  /**
+   * @param {string | undefined} currentPath
+   * @returns {Promise<string | null>}
+   */
+  chooseDirectory: (currentPath) => {
+    return ipcRenderer.invoke(IpcChannels.CHOOSE_DIRECTORY, currentPath)
+  },
+
+  /**
+   * @param {string | undefined} currentPath
+   * @returns {Promise<string | null>}
+   */
+  chooseFile: (currentPath) => {
+    return ipcRenderer.invoke(IpcChannels.CHOOSE_FILE, currentPath)
+  },
+
+  /**
+   * @param {{ videoUrl: string, ytdlpPath: string }} payload
+   * @returns {Promise<{ success: boolean, metadata?: any, error?: string }>}
+   */
+  getDownloadMetadata: (payload) => {
+    return ipcRenderer.invoke(IpcChannels.GET_DOWNLOAD_METADATA, payload)
+  },
+
+  /**
+   * @param {{ videoUrl: string, quality: string, audioOnly: boolean, downloadDir: string, ytdlpPath: string, sponsorBlockRemove?: string, sponsorBlockApi?: string }} payload
+   */
+  startDownload: (payload) => {
+    ipcRenderer.send(IpcChannels.START_DOWNLOAD, payload)
+  },
+
+  /**
+   * @param {string} videoUrl
+   */
+  cancelDownload: (videoUrl) => {
+    ipcRenderer.send(IpcChannels.CANCEL_DOWNLOAD, videoUrl)
+  },
+
+  /**
+   * @param {(progress: { videoUrl: string, percent: string, speed: string, eta: string }) => void} handler
+   */
+  onDownloadProgress: (handler) => {
+    ipcRenderer.removeAllListeners('download-progress')
+    ipcRenderer.on('download-progress', (_, progress) => {
+      handler(progress)
+    })
+  },
+
+  /**
+   * @param {(payload: { videoUrl: string }) => void} handler
+   */
+  onDownloadFinished: (handler) => {
+    ipcRenderer.removeAllListeners('download-finished')
+    ipcRenderer.on('download-finished', (_, payload) => {
+      handler(payload)
+    })
+  },
+
+  /**
+   * @param {(payload: { videoUrl: string, error: string }) => void} handler
+   */
+  onDownloadError: (handler) => {
+    ipcRenderer.removeAllListeners('download-error')
+    ipcRenderer.on('download-error', (_, payload) => {
+      handler(payload)
+    })
   }
 }

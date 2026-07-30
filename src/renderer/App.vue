@@ -96,6 +96,9 @@
     <FtCreatePlaylistPrompt
       v-if="showCreatePlaylistPrompt"
     />
+    <FtDownloadPrompt
+      v-if="showDownloadPrompt"
+    />
     <FtToast />
     <FtProgressBar
       v-if="showProgressBar"
@@ -119,6 +122,7 @@ import FtToast from './components/FtToast/FtToast.vue'
 import FtProgressBar from './components/FtProgressBar/FtProgressBar.vue'
 import FtPlaylistAddVideoPrompt from './components/FtPlaylistAddVideoPrompt/FtPlaylistAddVideoPrompt.vue'
 import FtCreatePlaylistPrompt from './components/FtCreatePlaylistPrompt/FtCreatePlaylistPrompt.vue'
+import FtDownloadPrompt from './components/FtDownloadPrompt/FtDownloadPrompt.vue'
 import FtKeyboardShortcutPrompt from './components/FtKeyboardShortcutPrompt/FtKeyboardShortcutPrompt.vue'
 import FtSearchFilters from './components/FtSearchFilters/FtSearchFilters.vue'
 import { vSaferHtml } from './directives/vSaferHtml.js'
@@ -162,6 +166,7 @@ const showAddToPlaylistPrompt = computed(() => store.getters.getShowAddToPlaylis
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const showCreatePlaylistPrompt = computed(() => store.getters.getShowCreatePlaylistPrompt)
+const showDownloadPrompt = computed(() => store.getters.getShowDownloadPrompt)
 
 /** @type {import('vue').ComputedRef<boolean>} */
 const showProgressBar = computed(() => store.getters.getShowProgressBar)
