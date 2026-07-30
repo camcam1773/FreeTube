@@ -23,6 +23,8 @@ const state = {
   showProgressBar: false,
   showAddToPlaylistPrompt: false,
   showCreatePlaylistPrompt: false,
+  showDownloadPrompt: false,
+  downloadPromptVideoObject: null,
   isKeyboardShortcutPromptShown: false,
   showSearchFilters: false,
   searchFilterValueChanged: false,
@@ -105,6 +107,14 @@ const getters = {
 
   getShowCreatePlaylistPrompt(state) {
     return state.showCreatePlaylistPrompt
+  },
+
+  getShowDownloadPrompt(state) {
+    return state.showDownloadPrompt
+  },
+
+  getDownloadPromptVideoObject(state) {
+    return state.downloadPromptVideoObject
   },
 
   getShowSearchFilters(state) {
@@ -287,6 +297,16 @@ const actions = {
   showCreatePlaylistPrompt ({ commit }, data) {
     commit('setShowCreatePlaylistPrompt', true)
     commit('setNewPlaylistVideoObject', data)
+  },
+
+  showDownloadPrompt ({ commit }, data) {
+    commit('setShowDownloadPrompt', true)
+    commit('setDownloadPromptVideoObject', data)
+  },
+
+  hideDownloadPrompt ({ commit }) {
+    commit('setShowDownloadPrompt', false)
+    commit('setDownloadPromptVideoObject', null)
   },
 
   showKeyboardShortcutPrompt ({ commit }) {
@@ -673,6 +693,14 @@ const mutations = {
 
   setShowCreatePlaylistPrompt (state, payload) {
     state.showCreatePlaylistPrompt = payload
+  },
+
+  setShowDownloadPrompt (state, payload) {
+    state.showDownloadPrompt = payload
+  },
+
+  setDownloadPromptVideoObject (state, payload) {
+    state.downloadPromptVideoObject = payload
   },
 
   setIsKeyboardShortcutPromptShown (state, payload) {

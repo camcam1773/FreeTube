@@ -502,6 +502,12 @@ const dropdownOptions = computed(() => {
       value: 'history'
     },
   ]
+  if (process.env.IS_ELECTRON && !isLive.value && !isUpcoming.value) {
+    options.push({
+      label: t('Video.Download'),
+      value: 'download'
+    })
+  }
   if (inUserPlaylist.value) {
     if (props.canMoveVideoUp || props.canMoveVideoDown) {
       options.push({
@@ -646,6 +652,12 @@ function handleOptionsClick(option) {
       } else {
         markAsWatched()
       }
+      break
+    case 'download':
+      store.dispatch('showDownloadPrompt', {
+        videoId: id.value,
+        title: title.value
+      })
       break
     case 'moveVideoTop':
       moveVideoToTheTop()
