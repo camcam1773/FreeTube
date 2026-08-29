@@ -38,6 +38,7 @@ Global:
     Watching Count: 1 個正在觀看 | {count} 個正在觀看
     Comment Count: 1 則留言 | {count} 則留言
     Like Count: 1 個喜歡 | {count} 個喜歡
+    Replies Remaining: （還有 1 則）|（還有 {count} 則）
 Search / Go to URL: '搜尋/ 前往網址'
   # In Filter Button
 Search Filters:
@@ -187,6 +188,8 @@ User Playlists:
   The playlist has been successfully exported: 播放清單已成功匯出
   TotalTimePlaylist: '總時長: {duration}'
   Export list of URLs: 匯出 URL 清單
+  Move Video to the Top: 將影片移至頂部
+  Move Video to the Bottom: 將影片移至底部
 History:
   # On History Page
   History: '觀看紀錄'
@@ -422,6 +425,9 @@ Settings:
       Full Screen: 全螢幕
       Picture in Picture: 畫中畫
       External Player: 外部播放器（{externalPlayerName}）
+      Full Window (Always On): 全視窗（一律開啟）
+      Full Screen (Always On): 全螢幕（一律開啟）
+      Tooltip: 大多數預設觀看模式僅在每次觀看工作階段開始時套用。在該工作階段期間所做的變更將持續生效，直到工作階段結束為止。而「一律開啟」的觀看模式則會在您切換至新影片時自動套用，無論您在觀看前一部影片時曾如何變更觀看模式。
   Subscription Settings:
     Subscription Settings: '訂閱'
     Fetch Feeds from RSS: 從RSS擷取推送
@@ -472,9 +478,9 @@ Settings:
     Profile object has insufficient data, skipping item: 設定檔物件資料不足，正在跳過項目
     Export History: 匯出觀看紀錄
     Import History: 匯入觀看紀錄
-    Export NewPipe: 匯出NewPipe
-    Export YouTube: 匯出YouTube
-    Export FreeTube: 匯出FreeTube
+    Export NewPipe: 匯出 NewPipe
+    Export YouTube: 匯出 YouTube
+    Export FreeTube: 匯出 FreeTube
     Export Subscriptions: 匯出訂閱
     Import Subscriptions: 匯入訂閱
     Select Export Type: 選取匯出類型
@@ -497,6 +503,15 @@ Settings:
     Export search history: 匯出搜尋歷史紀錄
     All search history has been successfully imported: 已成功匯入所有搜尋歷史紀錄
     All search history has been successfully exported: 已成功匯出所有搜尋歷史紀錄
+    Settings File: 設定檔
+    Import Settings: 匯入設定
+    Export Settings: 匯出設定
+    Settings Tooltip: 特定於作業系統或使用者，或是實驗性的設定無法匯出或匯入（例如：代理伺服器、外部播放器、螢幕截圖資料夾⋯⋯）
+    All settings have been successfully imported: 所有設定皆已成功匯入
+    All settings have been successfully exported: 所有設定皆已成功匯出
+    Setting object has insufficient data, skipping item: 設定物件的資料不足，將跳過該項目
+    Unknown setting key: 未知的設定鍵：{key}
+    Non-transferable setting key: 無法轉移的設定鍵：{key}
   Distraction Free Settings:
     Hide Video Likes And Dislikes: 隱藏影片喜歡與不喜歡
     Distraction Free Settings: 勿擾
@@ -701,6 +716,7 @@ Channel:
   Courses:
     This channel does not currently have any courses: 該頻道目前還沒有任何課程
     Courses: 課程
+  View All: 檢視全部
 Video:
   Open in YouTube: '在 YouTube 中開啟'
   Copy YouTube Link: '複製 YouTube 連結'
@@ -882,9 +898,10 @@ Comments:
   Hearted: 喜歡的
   Subscribed: 已訂閱
   There are no comments available for this post: 此貼文尚無留言
-  Hide {replyCount} replies: 隱藏 1 則回覆 | 隱藏 {replyCount} 則回覆
+  Hide Replies: 隱藏回覆
   View 1 reply from {channelName}: 檢視來自 {channelName} 的 1 則回覆
   View {replyCount} replies from {channelName} and others: 檢視來自 {channelName} 與其他頻道的 {replyCount} 則回覆
+  Loading replies: 正在載入回覆⋯⋯
 Up Next: '觀看其他類似影片'
 
 # Toast Messages
@@ -959,7 +976,7 @@ Tooltips:
     Scroll Playback Rate Over Video Player: 當游標停在影片上時，按住 Ctrl 鍵（Mac 的話則是 Command 鍵），然後向前或向後滾動滑鼠滾輪來控制播放速度。按住 Ctrl 鍵（Mac 的話則是 Command 鍵）並點擊滑鼠左鍵以快速回到預設的播放速度（1x，除非在設定中更改）。
     Skip by Scrolling Over Video Player: 使用滾輪跳過影片，MPV 風格。
   General Settings:
-    Invidious Instance: FreeTube 將連線到 Invidious 站台進行 API 呼叫。
+    Invidious Instance: FreeTube 將用於進行 API 呼叫的 Invidious 站台。除非您將此站台設為預設值，否則此設定的變更僅適用於目前的視窗。
     Thumbnail Preference: FreeTube 中所有縮圖都會被替換為經過模糊處理或隱藏的影片畫面而非預設縮圖。
     Fallback to Non-Preferred Backend on Failure: 當您的偏好 API 有問題時，FreeTube 將自動嘗試使用您的非偏好 API 作為汰退方案。
     Preferred API Backend: 選擇 FreeTube 要用於取得YouTube資料的伺服器。本地 API 是內建擷取器。Invidious API 需要 Invidious 伺服器才能連線。

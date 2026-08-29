@@ -879,7 +879,7 @@ Comments:
   Hearted: С сердечком
   Subscribed: Подписан(а)
   There are no comments available for this post: Для этой записи нет доступных комментариев
-  Hide {replyCount} replies: Скрыть 1 ответ | Скрыть {replyCount} ответа(ов)
+  Hide Replies: Скрыть ответ | Скрыть ответы
   View 1 reply from {channelName}: Смотреть 1 ответ от {channelName}
   View {replyCount} replies from {channelName} and others: Смотреть {replyCount} ответа(ов) от {channelName} и других
 Up Next: 'Следующий'
@@ -1071,7 +1071,7 @@ KeyboardShortcutPrompt:
       Playback: 'Видео: Воспроизведение'
       General: 'Видео: Общее'
   Show Keyboard Shortcuts: Показать сочетания клавиш
-  History Backward: Перейти на одну страницу
+  History Backward: Вернуться на одну страницу
   Keyboard Shortcuts: Ярлыки клавиатуры
   History Forward: Переместить одну страницу
   New Window: Создать новое окно

@@ -208,10 +208,12 @@
         v-if="!hideActiveSubscriptions"
         class="mobileHidden"
       >
-        <router-link
+        <component
+          :is="enableChannelLinks ? 'router-link' : 'span'"
           v-for="channel in activeSubscriptions"
           :key="channel.id"
           :to="`/channel/${channel.id}`"
+          :class="enableChannelLinks ? '' : 'disabledIcon'"
           class="navChannel channelLink mobileHidden"
           :title="channel.name"
           role="button"
@@ -241,7 +243,7 @@
           >
             {{ channel.name }}
           </p>
-        </router-link>
+        </component>
       </div>
     </div>
   </FtFlexBox>
@@ -371,6 +373,8 @@ const settingsTitle = computed(() => {
     KeyboardShortcuts.APP.GENERAL.NAVIGATE_TO_SETTINGS
   )
 })
+
+const enableChannelLinks = computed(() => !store.getters.getDisableChannelLinks)
 </script>
 
 <style scoped src="./SideNav.css" />

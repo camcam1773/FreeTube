@@ -89,8 +89,8 @@
             :playlist-items-length="shownPlaylistItems.length"
             :can-remove-from-playlist="true"
             :dragged-video="draggedVideo"
-            :is-sort-order-custom="isSortOrderCustom"
             :is-video-dragging="isVideoDragging"
+            :video-dragging-possible="videoDraggingPossible"
             @drag-video="setDraggedVideo"
             @drag-video-end="onDragVideoEnd"
             @move-dragged-video="moveDraggedVideoTemporarilyThrottled"
@@ -247,6 +247,8 @@ const videoSearchQuery = ref('')
 const promptOpen = ref(false)
 /** @type {import('vue').Ref<string[]>} */
 const toBeDeletedPlaylistItemIds = ref([])
+/** @type {import('vue').Ref<string[]>} */
+const videosWithPlaylistToUnset = ref([])
 /** @type {AbortController | null} */
 let undoToastAbortController = null
 
@@ -295,9 +297,15 @@ const selectedUserPlaylistVideos = computed(() => selectedUserPlaylist.value?.vi
 const selectedUserPlaylistVideoCount = computed(() => selectedUserPlaylistVideos.value.length)
 
 const moreVideoDataAvailable = computed(() => {
-  return isUserPlaylistRequested.value
-    ? userPlaylistVisibleLimit.value < sometimesFilteredUserPlaylistItems.value.length
-    : continuationData.value !== null
+  if (isUserPlaylistRequested.value) {
+    return userPlaylistVisibleLimit.value < sometimesFilteredUserPlaylistItems.value.length
+  }
+
+  if (infoSource.value === 'invidious') {
+    return playlistItems.value.length < videoCount.value
+  }
+
+  return continuationData.value !== null
 })
 
 const processedVideoSearchQuery = computed(() => videoSearchQuery.value.trim().toLowerCase())
@@ -453,6 +461,23 @@ function getPlaylistInfo() {
 
 const getPlaylistInfoDebounce = debounce(getPlaylistInfo, 100)
 
+function resetState() {
+  isLoading.value = true
+  playlistTitle.value = ''
+  playlistDescription.value = ''
+  firstVideoId.value = ''
+  playlistThumbnail.value = ''
+  viewCount.value = 0
+  videoCount.value = 0
+  lastUpdated.value = undefined
+  channelName.value = ''
+  channelThumbnail.value = ''
+  channelId.value = ''
+  infoSource.value = 'local'
+  playlistItems.value = []
+  continuationData.value = null
+}
+
 async function getPlaylistLocal() {
   try {
     const result = await getLocalPlaylist(playlistId.value)
@@ -588,7 +613,10 @@ function parseUserPlaylist(playlist) {
 }
 
 // react to route changes...
-watch(playlistId, getPlaylistInfoDebounce)
+watch(playlistId, () => {
+  resetState()
+  getPlaylistInfoDebounce()
+})
 
 watch(userPlaylistsReady, () => {
   // Fetch from local store when playlist data ready
@@ -598,12 +626,22 @@ watch(userPlaylistsReady, () => {
 })
 
 // Fetch from local store when current user playlist changed
-watch(selectedUserPlaylist, getPlaylistInfoDebounce)
+watch(selectedUserPlaylist, () => {
+  if (!isUserPlaylistRequested.value) { return }
+
+  getPlaylistInfoDebounce()
+})
 
 // Re-fetch from local store when current user playlist updated
-watch(selectedUserPlaylistLastUpdatedAt, getPlaylistInfoDebounce)
+watch(selectedUserPlaylistLastUpdatedAt, () => {
+  if (!isUserPlaylistRequested.value) { return }
+
+  getPlaylistInfoDebounce()
+})
 
 watch(selectedUserPlaylistVideoCount, async () => {
+  if (!isUserPlaylistRequested.value) { return }
+
   // Monitoring `selectedUserPlaylistVideos` makes this function called
   // Even when the same array object is returned
   // So length is monitored instead
@@ -668,7 +706,7 @@ function getNextPage() {
       isLoadingMore.value = false
     })
   } else if (infoSource.value === 'invidious') {
-    console.error('Playlist pagination is not currently supported when the Invidious backend is selected.')
+    getNextPageInvidious()
   }
 }
 
@@ -703,8 +741,22 @@ async function getNextPageLocal() {
   }
 }
 
+async function getNextPageInvidious() {
+  isLoadingMore.value = true
+
+  const index = playlistItems.value.length
+  const result = await invidiousGetPlaylistInfo(playlistId.value, index)
+  playlistItems.value.push(...result.videos)
+
+  isLoadingMore.value = false
+}
+
 const canMoveVideos = computed(() => {
-  return !playlistInVideoSearchMode.value && isSortOrderCustom.value && noPlaylistItemsPendingDeletion.value
+  return isUserPlaylistRequested.value && !playlistInVideoSearchMode.value && isSortOrderCustom.value && noPlaylistItemsPendingDeletion.value
+})
+
+const videoDraggingPossible = computed(() => {
+  return isUserPlaylistRequested.value && isSortOrderCustom.value && shownPlaylistItems.value.length >= 2
 })
 
 /**
@@ -946,6 +998,7 @@ function removeVideoFromPlaylist(videoId, playlistItemId) {
 
     if (foundVideo) {
       toBeDeletedPlaylistItemIds.value.push(playlistItemId)
+      videosWithPlaylistToUnset.value.push(videoId)
 
       // Only show toast when no existing toast shown
       if (undoToastAbortController == null) {
@@ -962,6 +1015,7 @@ function removeVideoFromPlaylist(videoId, playlistItemId) {
           () => {
             clearTimeout(actualRemoveVideosTimeout)
             toBeDeletedPlaylistItemIds.value = []
+            videosWithPlaylistToUnset.value = []
             undoToastAbortController = null
           },
           undoToastAbortController.signal,
@@ -980,11 +1034,13 @@ async function removeToBeDeletedVideosSometimes() {
   if (toBeDeletedPlaylistItemIds.value.length > 0) {
     await store.dispatch('removeVideos', {
       _id: playlistId.value,
-      // Create a new non-reactive array to avoid Electron erroring about Proxy objects not being clonable
+      // Create new non-reactive arrays to avoid Electron erroring about Proxy objects not being clonable
       playlistItemIds: [...toBeDeletedPlaylistItemIds.value],
+      videoIds: [...videosWithPlaylistToUnset.value],
     })
 
     toBeDeletedPlaylistItemIds.value = []
+    videosWithPlaylistToUnset.value = []
     undoToastAbortController?.abort()
     undoToastAbortController = null
   }
@@ -1075,6 +1131,7 @@ onBeforeRouteLeave((to) => {
       continuationData: continuationData.value
         ? extractLocalCacheablePlaylistContinuation(continuationData.value)
         : null,
+      videoCount: videoCount.value,
     })
   }
 
