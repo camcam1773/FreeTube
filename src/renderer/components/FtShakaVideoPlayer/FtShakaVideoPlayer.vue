@@ -169,6 +169,7 @@ import {
 } from '../../helpers/utils.js'
 import { MANIFEST_TYPE_SABR } from '../../helpers/player/SabrManifestParser.js'
 import { setupSabrScheme } from '../../helpers/player/SabrSchemePlugin.js'
+import { refreshSabrPlaybackSession } from '../../helpers/api/local.js'
 
 const props = defineProps({
   format: {
@@ -1296,7 +1297,15 @@ let sabrStream
 let sabrAbortController
 
 if (process.env.SUPPORTS_LOCAL_API && props.sabrData) {
-  sabrStream = /** @__NOINLINE__ */ setupSabrScheme(props.sabrData, () => player, () => sabrManifest, playerWidth, playerHeight)
+  sabrStream = /** @__NOINLINE__ */ setupSabrScheme(
+    props.sabrData,
+    () => player,
+    () => sabrManifest,
+    playerWidth,
+    playerHeight,
+    // Lets the SABR session continue in place when YouTube requests a playback reload
+    (options) => refreshSabrPlaybackSession(props.videoId, options),
+  )
   sabrAbortController = new AbortController()
   // Since there can be 2 requests at the same time (video + audio), we debounce the listener to only show the message once
   sabrStream.onBackoffRequested(debounce(({ backoffMs }) => {

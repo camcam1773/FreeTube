@@ -183,6 +183,13 @@ export default defineComponent({
       /** @type {Date|null} */
       streamingDataExpiryDate: null,
       currentPlaybackRate: null,
+      sabrReloadInProgress: false,
+      /**
+       * Full path of a route change made only to keep the playback position. Its caller
+       * reloads, so the $route watcher skips it. Cleared on every route change, so a stale
+       * value can never suppress a later, genuine navigation.
+       */
+      selfInitiatedRoutePath: null,
     }
   },
   computed: {
@@ -335,7 +342,15 @@ export default defineComponent({
     }
   },
   watch: {
-    async $route() {
+    async $route(to) {
+      // A route change made only to keep the playback position is reloaded by its caller
+      const selfInitiatedPath = this.selfInitiatedRoutePath
+      this.selfInitiatedRoutePath = null
+
+      if (selfInitiatedPath === to.fullPath) {
+        return
+      }
+
       await this.reloadView()
     },
     userPlaylistsReady() {
@@ -1969,14 +1984,26 @@ export default defineComponent({
       if (timestamp > 0) {
         // Reload at the middle should restart at current timestamp
         try {
-          await this.$router.replace({
+          const target = {
             path: this.$route.path,
             query: { ...this.$route.query, oneTimeTimestamp: timestamp },
-          })
+          }
+
+          // The caller of this function reloads, so the $route watcher must skip this change
+          this.selfInitiatedRoutePath = this.$router.resolve(target).fullPath
+
+          const failure = await this.$router.replace(target)
+
+          // A refused navigation changes nothing, so no watcher run follows and the caller
+          // has to reload itself. Guards against both a resolved and a thrown failure.
+          if (isNavigationFailure(failure)) {
+            this.selfInitiatedRoutePath = null
+          }
         } catch (failure) {
-          if (isNavigationFailure(failure, NavigationFailureType.duplicated)) {
-            // Already on route with same timestamp, allow reloadView to run instead
-          } else {
+          // No route change happened, so no watcher run follows and the caller reloads itself
+          this.selfInitiatedRoutePath = null
+
+          if (!isNavigationFailure(failure, NavigationFailureType.duplicated)) {
             throw failure
           }
         }
@@ -1988,11 +2015,21 @@ export default defineComponent({
       await this.reloadView()
     }, 1000),
 
-    async onSabrReloadRequested() {
-      showToast('Reloading player according to SABR request')
-      await this.saveWatchProgressForReload()
-      await this.reloadView()
-    },
+    onSabrReloadRequested: throttle(async function () {
+      // A reload takes longer than the throttle window, so without this guard a second
+      // request would start another reload while the first one is still running
+      if (this.sabrReloadInProgress) { return }
+
+      this.sabrReloadInProgress = true
+
+      try {
+        showToast('Reloading player according to SABR request')
+        await this.saveWatchProgressForReload()
+        await this.reloadView()
+      } finally {
+        this.sabrReloadInProgress = false
+      }
+    }, 1000),
 
     ...mapActions([
       'updateHistory',

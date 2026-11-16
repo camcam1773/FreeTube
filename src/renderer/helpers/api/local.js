@@ -607,6 +607,113 @@ function createWatchNextRequestBody(videoId) {
 }
 
 /**
+ * Cached state needed to re-issue the /player request in place when YouTube asks
+ * a SABR session to reload its playback (`RELOAD_PLAYER_RESPONSE`), or when the
+ * streaming URL or poToken has expired.
+ * @type {?{
+ *   videoId: string,
+ *   session: import('youtubei.js').Session,
+ *   player: import('youtubei.js').Player,
+ *   poToken: string | undefined,
+ *   initialAttestationData: object,
+ *   ytConfig: object,
+ * }}
+ */
+let lastSabrPlaybackState = null
+
+/**
+ * Requests a fresh playback session, returning the parts of the /player response that
+ * SABR playback needs.
+ * @param {NonNullable<typeof lastSabrPlaybackState>} cachedState
+ * @param {import('googlevideo/protos').ReloadPlaybackContext} [reloadPlaybackContext]
+ * @returns {Promise<{streamingUrl: string | undefined, ustreamerConfig: string | undefined}>}
+ */
+async function fetchPlaybackSession(cachedState, reloadPlaybackContext) {
+  const requestBody = createPlayerRequestBody(cachedState.videoId, cachedState.player.signature_timestamp, cachedState.poToken)
+
+  if (reloadPlaybackContext) {
+    requestBody.playbackContext.reloadPlaybackContext = reloadPlaybackContext
+  }
+
+  const playerResponseData = (await cachedState.session.actions.execute('/player', requestBody)).data
+
+  return {
+    streamingUrl: playerResponseData?.streamingData?.serverAbrStreamingUrl,
+    ustreamerConfig: playerResponseData?.playerConfig?.mediaCommonConfig?.mediaUstreamerRequestConfig?.videoPlaybackUstreamerConfig,
+  }
+}
+
+/**
+ * Mints a new content-bound poToken with the BotGuard challenge data cached when the
+ * video was loaded, and stores it so later refreshes use it.
+ * @param {NonNullable<typeof lastSabrPlaybackState>} cachedState
+ * @returns {Promise<boolean>} Whether a new token was minted
+ */
+async function renewPoToken(cachedState) {
+  try {
+    const newPoToken = await window.ftElectron.generatePoToken(
+      cachedState.videoId,
+      JSON.stringify(cachedState.session.context),
+      JSON.stringify(cachedState.initialAttestationData),
+      JSON.stringify(cachedState.ytConfig)
+    )
+
+    if (!newPoToken) {
+      return false
+    }
+
+    cachedState.poToken = newPoToken
+    return true
+  } catch (error) {
+    console.warn('Local API, re-minting the poToken failed', error)
+    return false
+  }
+}
+
+/**
+ * Re-fetches only the /player response so SABR playback can continue in the existing
+ * player instead of recreating the whole watch session. Passes the reload token YouTube
+ * sent in the `RELOAD_PLAYER_RESPONSE` part, and mints a new poToken when the current one
+ * was reported as invalid, or when YouTube returns no SABR URL (which suggests it expired).
+ * @param {string} videoId
+ * @param {{reloadPlaybackContext?: import('googlevideo/protos').ReloadPlaybackContext, tokenIsInvalid?: boolean}} [options]
+ * @returns {Promise<{url: string, ustreamerConfig: string | undefined, poToken: string} | null>}
+ */
+export async function refreshSabrPlaybackSession(videoId, { reloadPlaybackContext, tokenIsInvalid } = {}) {
+  const cachedState = lastSabrPlaybackState
+
+  if (cachedState?.videoId !== videoId || !cachedState.poToken) {
+    return null
+  }
+
+  // A token the streamer rejected can't be used again, so replace it before asking
+  if (tokenIsInvalid && !(await renewPoToken(cachedState))) {
+    return null
+  }
+
+  let playbackSession = await fetchPlaybackSession(cachedState, reloadPlaybackContext)
+
+  if (!playbackSession.streamingUrl && !tokenIsInvalid) {
+    // No streaming URL means the poToken has most likely expired, so try a newly minted one
+    if (!(await renewPoToken(cachedState))) {
+      return null
+    }
+
+    playbackSession = await fetchPlaybackSession(cachedState, reloadPlaybackContext)
+  }
+
+  if (!playbackSession.streamingUrl) {
+    return null
+  }
+
+  return {
+    url: await cachedState.player.decipher(playbackSession.streamingUrl),
+    ustreamerConfig: playbackSession.ustreamerConfig,
+    poToken: cachedState.poToken,
+  }
+}
+
+/**
  * @param {string} id
  * @returns {Promise<{
  *   info: import('youtubei.js').YT.VideoInfo,
@@ -621,6 +728,9 @@ function createWatchNextRequestBody(videoId) {
  * }>}
  */
 export async function getLocalVideoInfo(id) {
+  // Any cached playback state belongs to the previously loaded video
+  lastSabrPlaybackState = null
+
   let responseTime
   let totalAdTimeMilliseconds = 0
 
@@ -809,6 +919,16 @@ export async function getLocalVideoInfo(id) {
 
     if (info.streaming_data.server_abr_streaming_url) {
       info.streaming_data.server_abr_streaming_url = await player.decipher(info.streaming_data.server_abr_streaming_url)
+
+      // Needed to refresh the playback session (and re-mint the poToken) in place later on
+      lastSabrPlaybackState = {
+        videoId: id,
+        session: htmlExtracts.session,
+        player,
+        poToken: contentPoToken,
+        initialAttestationData: htmlExtracts.initialAttestationData,
+        ytConfig: htmlExtracts.ytConfig,
+      }
     }
 
     if (info.streaming_data.dash_manifest_url) {
