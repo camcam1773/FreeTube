@@ -102,6 +102,8 @@ const ShakaError = shaka.util.Error
  *   Set when YouTube requested a reload with `RELOAD_PLAYER_RESPONSE`
  * @property {boolean} [tokenIsInvalid]
  *   Set when the stream protection status rejected the poToken, so a new one must be minted
+ * @property {boolean} [renewToken]
+ *   Set for 401/403 recovery, where a fresh poToken is worth trying but not required
  */
 /**
  * Refreshes the playback session, returning a new SABR URL (and a new poToken when one
@@ -349,10 +351,26 @@ function createTimeoutController(callback, timeoutMs) {
  * @param {number} max
  * @returns {RefreshBudget}
  */
-function createRefreshBudget(max) {
+export function createRefreshBudget(max) {
   return {
     max,
     available: max,
+  }
+}
+
+/**
+ * Asks the watch view to rebuild the player when the playback session cannot be
+ * recovered in place. The flag stops the concurrent video and audio requests
+ * from each requesting their own reload.
+ * @param {CurrentState} currentState
+ */
+function requestPlayerReload(currentState) {
+  currentState.sabrStreamState.playerReloadRequested = true
+  currentState.abortStatus.cancelled = true
+
+  if (!currentState.abortController.signal.aborted) {
+    currentState.abortController.abort()
+    currentState.eventEmitter.emit('reload')
   }
 }
 
@@ -363,7 +381,7 @@ function createRefreshBudget(max) {
  * @param {SabrStreamState} sabrStreamState
  * @param {number} [now]
  */
-function recordHealthyPlaybackTime(sabrStreamState, now = Date.now()) {
+export function recordHealthyPlaybackTime(sabrStreamState, now = Date.now()) {
   const gapMs = now - sabrStreamState.lastHealthyPlaybackAt
   sabrStreamState.lastHealthyPlaybackAt = now
 
@@ -393,7 +411,7 @@ function recordHealthyPlaybackTime(sabrStreamState, now = Date.now()) {
  * @param {CurrentState} currentState
  * @param {{url: string, ustreamerConfig?: string, poToken?: string}} refreshedPlayback
  */
-function applyRefreshedPlayback(currentState, refreshedPlayback) {
+export function applyRefreshedPlayback(currentState, refreshedPlayback) {
   currentState.sabrStreamState.sabrUrl = refreshedPlayback.url
 
   // The retry starts a fresh playback session, so backoffs the server sent before or during
@@ -431,7 +449,7 @@ function applyRefreshedPlayback(currentState, refreshedPlayback) {
  * @param {import('googlevideo/protos').ReloadPlaybackContext} [reloadPlaybackContext]
  * @returns {Promise<?{url: string, ustreamerConfig?: string, poToken?: string}>}
  */
-async function refreshPlaybackInSession(currentState, reason, reloadPlaybackContext) {
+export async function refreshPlaybackInSession(currentState, reason, reloadPlaybackContext) {
   const sabrStreamState = currentState.sabrStreamState
   const refreshPlaybackContext = currentState.refreshPlaybackContext
 
@@ -456,6 +474,7 @@ async function refreshPlaybackInSession(currentState, reason, reloadPlaybackCont
     // The reload token belongs to a server requested reload, and nothing else
     reloadPlaybackContext: reason === 'reload' ? reloadPlaybackContext : undefined,
     tokenIsInvalid: reason === 'invalidPoToken',
+    renewToken: reason === 'forbidden',
   })
     .catch((refreshError) => {
       console.warn('Failed to refresh the SABR playback session', refreshError)
@@ -506,7 +525,7 @@ function prepareRetryRequest(currentState) {
  * @param {OperationInputs} operationInputs - readonly
  * @param {CurrentState} currentState - can be updated
  */
-async function doRequest(
+export async function doRequest(
   operationInputs,
   currentState,
 ) {
@@ -556,11 +575,7 @@ async function doRequest(
     }
     if (shouldReloadDueToBackoffLoop || currentState.cumulativeRetryDueToNextRequestPolicy >= 100) {
       // Fire fake reload event due to detecting retry loop
-      currentState.sabrStreamState.playerReloadRequested = true
-      if (!currentState.abortController.signal.aborted) {
-        currentState.abortController.abort()
-        currentState.eventEmitter.emit('reload')
-      }
+      requestPlayerReload(currentState)
     }
 
     const sabrURL = new URL(currentState.sabrStreamState.sabrUrl)
@@ -583,6 +598,11 @@ async function doRequest(
         applyRefreshedPlayback(currentState, refreshedPlayback)
 
         shouldRetry = true
+      } else {
+        // No usable session left in place. Rebuild the player once rather than
+        // surfacing the raw 403 to the user, which is what a manual reload did.
+        requestPlayerReload(currentState)
+        throw createRecoverableNetworkError(ShakaError.Code.OPERATION_ABORTED, operationInputs.uri, operationInputs.requestType)
       }
     }
 
@@ -798,11 +818,7 @@ async function doRequest(
         applyRefreshedPlayback(currentState, refreshedPlayback)
       } else {
         // The session could not be refreshed in place, fall back to reloading the player view
-        currentState.sabrStreamState.playerReloadRequested = true
-        if (!currentState.abortController.signal.aborted) {
-          currentState.abortController.abort()
-          currentState.eventEmitter.emit('reload')
-        }
+        requestPlayerReload(currentState)
 
         throw createRecoverableNetworkError(ShakaError.Code.OPERATION_ABORTED, operationInputs.uri, operationInputs.requestType)
       }

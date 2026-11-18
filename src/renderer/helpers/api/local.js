@@ -673,27 +673,36 @@ async function renewPoToken(cachedState) {
 /**
  * Re-fetches only the /player response so SABR playback can continue in the existing
  * player instead of recreating the whole watch session. Passes the reload token YouTube
- * sent in the `RELOAD_PLAYER_RESPONSE` part, and mints a new poToken when the current one
- * was reported as invalid, or when YouTube returns no SABR URL (which suggests it expired).
+ * sent in the `RELOAD_PLAYER_RESPONSE` part. A poToken is re-minted when the current one was
+ * reported as invalid, when `renewToken` is set for 401/403 recovery, or when YouTube
+ * returns no SABR URL (which suggests it expired). Renewal is best effort except when the
+ * token was explicitly rejected, in which case a replacement is required.
  * @param {string} videoId
- * @param {{reloadPlaybackContext?: import('googlevideo/protos').ReloadPlaybackContext, tokenIsInvalid?: boolean}} [options]
+ * @param {{reloadPlaybackContext?: import('googlevideo/protos').ReloadPlaybackContext, tokenIsInvalid?: boolean, renewToken?: boolean}} [options]
+ * @param {?object} [cachedState] Injectable for tests, defaults to the state cached by getLocalVideoInfo
  * @returns {Promise<{url: string, ustreamerConfig: string | undefined, poToken: string} | null>}
  */
-export async function refreshSabrPlaybackSession(videoId, { reloadPlaybackContext, tokenIsInvalid } = {}) {
-  const cachedState = lastSabrPlaybackState
-
+export async function refreshSabrPlaybackSession(videoId, { reloadPlaybackContext, tokenIsInvalid, renewToken } = {}, cachedState = lastSabrPlaybackState) {
   if (cachedState?.videoId !== videoId || !cachedState.poToken) {
     return null
   }
 
-  // A token the streamer rejected can't be used again, so replace it before asking
-  if (tokenIsInvalid && !(await renewPoToken(cachedState))) {
-    return null
+  // A token the streamer rejected must be replaced before asking for a new session.
+  // For a 403 the renewal is best effort: a fresh URL is still worth retrying with
+  // the old token if minting failed.
+  let tokenRenewed = false
+
+  if (tokenIsInvalid || renewToken) {
+    tokenRenewed = await renewPoToken(cachedState)
+
+    if (tokenIsInvalid && !tokenRenewed) {
+      return null
+    }
   }
 
   let playbackSession = await fetchPlaybackSession(cachedState, reloadPlaybackContext)
 
-  if (!playbackSession.streamingUrl && !tokenIsInvalid) {
+  if (!playbackSession.streamingUrl && !tokenRenewed && !tokenIsInvalid && !renewToken) {
     // No streaming URL means the poToken has most likely expired, so try a newly minted one
     if (!(await renewPoToken(cachedState))) {
       return null
