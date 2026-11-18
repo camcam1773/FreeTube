@@ -90,6 +90,7 @@
       >
         <FtInput
           ref="searchInput"
+          data-testid="search-bar"
           :placeholder="t('Search / Go to URL')"
           class="searchInput"
           is-search

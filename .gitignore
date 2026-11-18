@@ -26,6 +26,11 @@ csak-timelog.json
 .idea/
 debug/
 
+# Playwright
+playwright-report/
+test-results/
+blob-report/
+
 # Lefthook
 lefthook-local.yml
 

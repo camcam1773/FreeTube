@@ -26,3 +26,37 @@ Please follow these guidelines before sending your pull request and making contr
 # Setting up Your Environment
 
 Check out the [wiki](https://docs.freetubeapp.io/development/getting-started/) page to learn how to set up your environment and get started.
+
+# End-to-end tests
+
+The e2e suite drives the real Electron app through the same clicks and typing a user would use. It only exercises the local API; the Invidious backend is not used or configured by these tests. All YouTube traffic is intercepted with Playwright routes, so the suite is fully offline in CI.
+
+```bash
+pnpm run test:e2e          # run the suite headlessly (builds dist/ when missing)
+pnpm run test:e2e:live     # real playback of https://youtu.be/rz1B4B2yBZY (local only)
+pnpm run test:e2e:ui       # Playwright UI mode
+pnpm run test:e2e:debug    # step through a test
+pnpm run test:e2e:record   # record fresh API fixtures from live YouTube (local only)
+```
+
+On Linux, Electron needs a display even in automation: run the suite with `xvfb-run -a pnpm run test:e2e`. CI does this in `.github/workflows/e2e.yml`.
+
+`test/e2e/specs/live-playback.spec.js` launches an unmocked app, pastes the shared YouTube URL into the search bar, presses play, asserts that playback advances for at least 5 seconds, then opens Shaka's Resolution menu and switches to the next higher available quality. It needs real network access and is **skipped whenever `CI`, `GITHUB_ACTIONS` or `GITHUB_WORKFLOW` is set**, so it never runs in GitHub Actions. Because live streams can reload or throttle, this spec has its own retries.
+
+## How it works
+
+- `test/e2e/fixtures.js` launches the packaged app (`dist/main.js`) with an isolated temporary `--user-data-dir`, pre-seeded with settings that force the local API and disable update checks and optional integrations.
+- `test/e2e/helpers/mock-youtube.js` intercepts YouTube API calls, watch HTML, player JS, thumbnails and media. Requests to any other host are aborted. The bot-guard poToken IPC call is stubbed in the main process because it runs outside the renderer's network context.
+- `test/e2e/helpers/responses.js` builds small, deterministic InnerTube responses from the entities in `test/e2e/fixtures/entities.js`.
+- `test/e2e/pages/` contains page objects; `test/e2e/specs/` contains the user journeys. Prefer visible UI and URL assertions over internal state, and use web-first expectations instead of fixed sleeps.
+
+## Fixtures
+
+Generated fixtures are enough for the core journeys. To refresh them against live YouTube, run `pnpm run test:e2e:record` locally; sanitized responses are written to `test/e2e/fixtures/recorded/`. Set `E2E_USE_RECORDED=1` to replay those saved responses instead of the generated ones. Never commit tokens, cookies or visitor data - the recorder strips them.
+
+## Adding a test
+
+1. Add fake data to `test/e2e/fixtures/entities.js` and, if needed, a response builder in `test/e2e/helpers/responses.js`.
+2. Add the route to `mock-youtube.js` if a new endpoint is involved.
+3. Write a journey in `test/e2e/specs/*.spec.js` using the `window` fixture and `data-testid` / role / text locators.
+4. Run the new spec locally, then make sure the e2e workflow passes.
