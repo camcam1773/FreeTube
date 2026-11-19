@@ -865,12 +865,17 @@ export async function doRequest(
       }
     }
 
-    // Passed through as a string: an Error wrapper would serialise as {} in the player error
-    // log and hide the type and code that identify the failure
+    // An in-place refresh could not clear the SABR error (for example the session
+    // state behind the retried request is no longer accepted). Rebuild the player
+    // once with a clean session instead of surfacing the raw error as a fatal
+    // player failure - the same recovery a 403 uses when its refresh budget runs out.
+    console.warn('SABR error could not be recovered in place, reloading player', error)
+    requestPlayerReload(currentState)
+
+    // Abort the in-flight requests while the watch view rebuilds the player.
     throw createRecoverableNetworkError(
-      ShakaError.Code.HTTP_ERROR,
+      ShakaError.Code.OPERATION_ABORTED,
       operationInputs.uri,
-      error,
       operationInputs.requestType,
     )
   } else if (responseDataChunks.length > 0 && !segmentComplete) {

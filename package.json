@@ -42,6 +42,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:live": "playwright test test/e2e/specs/live-playback.spec.js",
+    "test:e2e:shaka-fuzz": "playwright test test/e2e/specs/shaka-fuzz.spec.js",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:record": "node _scripts/e2e-record.mjs",

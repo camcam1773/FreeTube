@@ -34,6 +34,7 @@ The e2e suite drives the real Electron app through the same clicks and typing a 
 ```bash
 pnpm run test:e2e          # run the suite headlessly (builds dist/ when missing)
 pnpm run test:e2e:live     # real playback of https://youtu.be/rz1B4B2yBZY (local only)
+pnpm run test:e2e:shaka-fuzz # play random trending videos and fail on Shaka player errors (local only)
 pnpm run test:e2e:ui       # Playwright UI mode
 pnpm run test:e2e:debug    # step through a test
 pnpm run test:e2e:record   # record fresh API fixtures from live YouTube (local only)
@@ -42,6 +43,8 @@ pnpm run test:e2e:record   # record fresh API fixtures from live YouTube (local 
 On Linux, Electron needs a display even in automation: run the suite with `xvfb-run -a pnpm run test:e2e`. CI does this in `.github/workflows/e2e.yml`.
 
 `test/e2e/specs/live-playback.spec.js` launches an unmocked app, pastes the shared YouTube URL into the search bar, presses play, asserts that playback advances for at least 5 seconds, then opens Shaka's Resolution menu and switches to the next higher available quality. It needs real network access and is **skipped whenever `CI`, `GITHUB_ACTIONS` or `GITHUB_WORKFLOW` is set**, so it never runs in GitHub Actions. Because live streams can reload or throttle, this spec has its own retries.
+
+`test/e2e/specs/shaka-fuzz.spec.js` plays a batch of random trending YouTube videos (shorts excluded) and stress-tests each one: random seeks, optional resolution changes, and long enough playback for streaming sessions to expire. Those are the paths that provoke SABR/Shaka failures (segment requests at arbitrary positions, poToken/session refresh, reload recovery). Renderer console errors and uncaught exceptions are captured by the `consoleErrors` / `liveConsoleErrors` fixtures in `test/e2e/fixtures.js`, so the spec fails with the video ID and full error log whenever `logShakaError()` fires. It is also local-only. Useful env vars: `SHAKA_FUZZ_COUNT` (default 8), `SHAKA_FUZZ_PLAY_SECONDS` (default 12), `SHAKA_FUZZ_SEEKS` (default 3), `SHAKA_FUZZ_QUALITY_CHANGES` (default 0), `SHAKA_FUZZ_SETTLE_MS` (default 2000), `SHAKA_FUZZ_IDS` (comma-separated IDs to reproduce a specific failure), and `E2E_DEBUG=1` to stream renderer logs live.
 
 ## How it works
 

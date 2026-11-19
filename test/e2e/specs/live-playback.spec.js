@@ -1,4 +1,5 @@
 import { expect, test } from '../fixtures.js'
+import { openResolutionMenu, resolutionOf } from '../helpers/shaka-controls.js'
 
 const LIVE_VIDEO_URL = 'https://youtu.be/rz1B4B2yBZY'
 const LIVE_VIDEO_ID = 'rz1B4B2yBZY'
@@ -8,37 +9,6 @@ const IS_CI = Boolean(
   process.env.GITHUB_ACTIONS ||
   process.env.GITHUB_WORKFLOW,
 )
-
-const resolutionOf = (label) => Number(label.match(/(\d+)p/)?.[1] ?? 0)
-
-/** Shaka rebuilds its controls when the live stream reloads, so retry opening the menu. */
-async function openResolutionMenu(window) {
-  for (let attempt = 0; attempt < 6; attempt++) {
-    const moreSettings = window.getByRole('button', { name: 'More settings' })
-    if (await moreSettings.isVisible().catch(() => false)) {
-      await moreSettings.click({ timeout: 5_000 }).catch(() => {})
-    }
-
-    const button = window.locator('.shaka-resolution-button:visible').first()
-    if (await button.count()) {
-      const status = await button.getAttribute('shaka-status')
-      const currentResolution = resolutionOf(status ?? (await button.innerText()))
-      try {
-        await button.click({ timeout: 5_000 })
-        const options = window.locator('.shaka-resolutions .explicit-resolution:visible')
-        if (await options.count()) {
-          return { options, currentResolution, currentIsAuto: /auto/i.test(status ?? '') }
-        }
-      } catch {
-        // The controls were rebuilt between locating and clicking.
-      }
-    }
-
-    await window.waitForTimeout(500)
-  }
-
-  throw new Error('Could not open Shaka resolution menu')
-}
 
 // Live YouTube needs real network + botguard, so this journey is local-only.
 test.describe('real video playback (local only)', () => {

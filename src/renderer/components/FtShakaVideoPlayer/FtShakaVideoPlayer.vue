@@ -1295,6 +1295,10 @@ let sabrManifest
 let sabrStream
 /** @type {AbortController | undefined} */
 let sabrAbortController
+// A SABR reload intentionally aborts in-flight requests. Set when the reload is
+// requested so the resulting OPERATION_ABORTED errors can be ignored instead of
+// being reported as fatal player errors (see handleError).
+let sabrReloadRequested = false
 
 if (process.env.SUPPORTS_LOCAL_API && props.sabrData) {
   sabrStream = /** @__NOINLINE__ */ setupSabrScheme(
@@ -1321,6 +1325,7 @@ if (process.env.SUPPORTS_LOCAL_API && props.sabrData) {
     )
   }, 1000))
   sabrStream.onReloadOnce(() => {
+    sabrReloadRequested = true
     sabrAbortController.abort()
     emit('player-reload-requested')
   })
@@ -2555,6 +2560,16 @@ function handleError(error, context, details) {
   // As they can be nested (e.g. multiple googlevideo redirects because the Invidious server was far away from the user) we should pick the inner most one
   while (error.code === ErrorCode.REQUEST_FILTER_ERROR || error.code === ErrorCode.RESPONSE_FILTER_ERROR) {
     error = error.data[0]
+  }
+
+  // A SABR reload aborts every in-flight request on purpose. The SABR scheme throws
+  // OPERATION_ABORTED to signal that abort, but shaka's networking engine escalates
+  // it to CRITICAL, so it reaches here instead of being retried. The watch view is
+  // already rebuilding the player - surfacing this would cause a needless format
+  // fallback and a scary console error.
+  if (process.env.SUPPORTS_LOCAL_API && sabrReloadRequested &&
+    error.code === ErrorCode.OPERATION_ABORTED) {
+    return
   }
 
   // Allow shaka-player to retry on potentially recoverable network errors
